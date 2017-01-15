@@ -175,3 +175,89 @@ def drawstats(swings, holes, s):
     th = thefont.render(txth, False, (255,255,255))
     s.blit(ts, (W-220,0))
     s.blit(th, (W-220,ts.get_height()))
+
+#Game LOOP
+screen = pygame.display.set_mode((W, H), 0)
+pygame.mouse.set_visible(False)
+t=0.0
+lt = 0.0
+left = False
+right = False
+up = False
+down = False
+dopause = False
+
+px = PW2
+tx = picktarget(px+PW)
+setasgauss(px+PW)
+holes = 0
+swings = 0
+while(True):
+
+    screen.fill((0,0,0))
+
+    for event in pygame.event.get():
+        if(event.type == QUIT):
+            pygame.quit()
+            
+        elif(event.type == KEYDOWN):
+            
+            if(event.key == K_LEFT):
+                left = True
+            elif(event.key == K_RIGHT):
+                right = True
+            elif(event.key == K_UP):
+                up = True
+            elif(event.key == K_DOWN):
+                down = True
+            elif(event.key == K_SPACE):
+                swings += 1
+                x = randomlychooseposition()
+                if(intarget(x,tx)):
+                    holes += 1
+                    dopause = True
+                setasgauss(x)
+
+            if(event.key == K_ESCAPE):
+                pygame.quit()
+                
+        elif(event.type == KEYUP):
+                    
+            if(event.key == K_LEFT):
+                left = False
+            elif(event.key == K_RIGHT):
+                right = False
+            elif(event.key == K_UP):
+                up = False
+            elif(event.key == K_DOWN):
+                down = False
+
+    t = pygame.time.get_ticks()
+    if(t >= lt):
+        n=0
+        while(t >= lt):
+            lt += TIMESTEP
+            n += 1
+        #if(n > 1):
+        #    print "WARNING: insufficient framerate"
+        dt = float(n*TIMESTEP*TIMESCALE)
+        if(left):
+            px = max(px-PSPEED*dt,PW2)
+        if(right):
+            px = min(px+PSPEED*dt,A-PW2)
+        if(up):
+            PH = min(PH+PCHANGE*dt,PHMAX)
+        if(down):
+            PH = max(PH-PCHANGE*dt,0)
+        #reset coeffs several times, to have smaller timesteps (more stable)
+        for i in range(0,SUBITERS):
+            updatecoeffs(px,dt/SUBITERS)
+        drawperturb(px,screen)
+        drawtarget(tx,screen)
+        renderwf(t,screen)
+        drawstats(swings, holes, screen)
+        pygame.display.flip()
+        if(dopause):
+            time.sleep(1)
+            dopause = False
+            tx = picktarget(tx)
